@@ -58,21 +58,49 @@
               </ul>
             </li>
           </ul>
-          <form class="d-flex" role="search">
-            <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-            <button class="btn btn-success" type="submit">Search</button>
-          </form>
         </div>
       </div>
     </div>
   </nav>
 
+  <div class="container">
+
+    <div class="row">
+      <div id="tochoice">
+        <button class="btn btn-primary" id="notation">Noter la nuit</button>
+      </div>
+
+      <div  id="choices" class="row">
+        <div class="col-6">
+          <button class="btn btn-primary btn-choice" id="n0">No sleep</button>
+          <button class="btn btn-primary btn-choice" id="n1">Insomnie</button>
+          <button class="btn btn-primary btn-choice" id="n2">Mauvais</button>
+        </div>
+        <div class="col-6" class="row">
+          <button class="btn btn-primary btn-choice" id="n3">Moyen</button>
+          <button class="btn btn-primary btn-choice" id="n4">Bon</button>
+          <button class="btn btn-primary btn-choice" id="n5">Lourd</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mt-3">
+      <button class="btn btn-primary" id="gotowatch">Voir le suivi</button>
+    </div>
+
+    <div class="row mt-4">
+      <canvas id="myChart"></canvas>
+    </div>
+
+  </div>
+
 
   <script src="js/vendor/modernizr-3.11.2.min.js"></script>
-  <script src="js/plugins.js"></script>
+  <script src="js/vendor/plugins.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/bootstrap.js"></script>
-
+  <script src="js/vendor/bootstrap.js"></script>
+  <script src="js/vendor/chart.js"></script>
+  <script src="js/chart-custom.js"></script>
 
 </body>
 
