@@ -4545,9 +4545,199 @@ module.exports.default = axios;
 },{"./utils":"node_modules/axios/lib/utils.js","./helpers/bind":"node_modules/axios/lib/helpers/bind.js","./core/Axios":"node_modules/axios/lib/core/Axios.js","./core/mergeConfig":"node_modules/axios/lib/core/mergeConfig.js","./defaults":"node_modules/axios/lib/defaults/index.js","./cancel/CanceledError":"node_modules/axios/lib/cancel/CanceledError.js","./cancel/CancelToken":"node_modules/axios/lib/cancel/CancelToken.js","./cancel/isCancel":"node_modules/axios/lib/cancel/isCancel.js","./env/data":"node_modules/axios/lib/env/data.js","./helpers/toFormData":"node_modules/axios/lib/helpers/toFormData.js","../lib/core/AxiosError":"node_modules/axios/lib/core/AxiosError.js","./helpers/spread":"node_modules/axios/lib/helpers/spread.js","./helpers/isAxiosError":"node_modules/axios/lib/helpers/isAxiosError.js"}],"node_modules/axios/index.js":[function(require,module,exports) {
 module.exports = require('./lib/axios');
 },{"./lib/axios":"node_modules/axios/lib/axios.js"}],"js/main.js":[function(require,module,exports) {
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(Object(source), true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var axios = require('axios');
 
 var urlApi = 'http://localhost:3000/';
+var choiceButtons = document.querySelectorAll(".btn-choice");
+var notificationCreateEl = document.querySelector(".notification-create");
+var notificationUpdateEl = document.querySelector(".notification-update");
+var data = [];
+var chart;
+choiceButtons.forEach(function (choiceButton) {
+  choiceButton.addEventListener("click", function () {
+    var noteObj = {
+      sleepQuality: +choiceButton.id.slice(1),
+      date: new Date().toISOString().split('T')[0],
+      day: new Date().toLocaleString('fr-FR', {
+        weekday: 'short'
+      }),
+      id: new Date().getTime()
+    }; // '2022-05-05'
+
+    var todayNode = getTodayNote(noteObj.date); // Check if today's quality sleep as already been set
+
+    if (todayNode) {
+      updateNoteInDtb(_objectSpread(_objectSpread({}, noteObj), {}, {
+        id: todayNode.id
+      }));
+    } else {
+      addNoteToDtb(noteObj, true);
+    }
+  });
+}); // Fetch sleepWatch from db
+
+axios.get(urlApi + 'sleepWatch').then(function (res) {
+  data = res.data;
+  var dates = res.data.map(function (el) {
+    return new Date(el.date);
+  });
+  var highestDate = Math.max.apply(null, dates); // Check if there is days without matching value in dtb
+
+  var missingDays = getMissingDaysFromDtb(new Date(highestDate));
+
+  if (missingDays.length > 0) {
+    handleMissingDays(missingDays.sort());
+    return;
+  }
+
+  initChart(res.data);
+}).catch(function (error) {
+  return console.log(error);
+});
+
+function addNoteToDtb(noteDto, chartIsRendered, isLastMissingDayToAddInDtb) {
+  axios.post(urlApi + 'sleepWatch', noteDto).then(function (resp) {
+    if (chartIsRendered) {
+      removeDataFromChart(chart);
+      addDataToChart(chart, noteDto);
+      showNotification(false);
+    } else {
+      data.push(noteDto);
+
+      if (isLastMissingDayToAddInDtb) {
+        initChart(data);
+      }
+    }
+  }).catch(function (error) {
+    return console.log(error);
+  });
+}
+
+function updateNoteInDtb(noteDto) {
+  axios.put(urlApi + 'sleepWatch/' + noteDto.id, noteDto).then(function (resp) {
+    updateDataFromChart(chart, noteDto); // Add UI animation notification
+
+    showNotification(true);
+  }).catch(function (error) {
+    return console.log(error);
+  });
+}
+
+function showNotification(isUpdate) {
+  var element = isUpdate ? notificationUpdateEl : notificationCreateEl;
+  element.classList.add("d-block");
+  setTimeout(function () {
+    return element.classList.remove("d-block");
+  }, 1500);
+}
+
+function initChart(data) {
+  // Init chart.js component
+  var chartData = {
+    datasets: [{
+      label: 'Qualité du sommeil',
+      backgroundColor: 'rgb(255,99,132)',
+      borderColor: '#f5f5f5',
+      data: data.slice(-7),
+      parsing: {
+        yAxisKey: 'sleepQuality',
+        xAxisKey: 'day'
+      }
+    }]
+  }; // Create chartJS config
+
+  var config = {
+    type: 'line',
+    data: chartData,
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          min: 0,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+            color: 'white'
+          }
+        },
+        x: {
+          ticks: {
+            color: 'white'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          display: false
+        }
+      }
+    }
+  };
+  chart = new Chart(document.getElementById('myChart'), config);
+}
+
+function handleMissingDays(missingDays) {
+  // ['2022-05-05', '2022-05-05']
+  missingDays.forEach(function (missingDay, i) {
+    var noteObj = {
+      sleepQuality: null,
+      date: missingDay,
+      day: new Date(missingDay).toLocaleString('fr-FR', {
+        weekday: 'short'
+      }),
+      id: new Date().getTime() + i
+    };
+    addNoteToDtb(noteObj, false, missingDays.length === i + 1);
+  });
+}
+
+function getMissingDaysFromDtb(maxDate) {
+  var missingDays = [];
+  var diffInTime = new Date().getTime() - maxDate.getTime();
+  var diffInDays = diffInTime / (1000 * 3600 * 24) - 1;
+
+  for (var i = 1; i < diffInDays; i++) {
+    var date = new Date();
+    missingDays.push(new Date(date.setDate(date.getDate() - i)).toISOString().split('T')[0]);
+  }
+
+  return missingDays;
+}
+
+function addDataToChart(chart, noteObj) {
+  chart.data.labels.push(noteObj.day);
+  chart.data.datasets.forEach(function (dataset) {
+    dataset.data.push(noteObj);
+  });
+  chart.update();
+}
+
+function updateDataFromChart(chart, noteObj) {
+  chart.data.datasets.forEach(function (dataset) {
+    dataset.data[dataset.data.length - 1] = noteObj;
+  });
+  chart.update();
+}
+
+function removeDataFromChart(chart) {
+  chart.data.labels.shift();
+  chart.data.datasets.forEach(function (dataset) {
+    dataset.data.shift();
+  });
+  chart.update();
+}
+
+function getTodayNote(today) {
+  return chart.data.datasets[0].data.find(function (note) {
+    return note.date === today ? note : null;
+  });
+}
 },{"axios":"node_modules/axios/index.js"}],"node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
@@ -4576,7 +4766,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "49364" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "61248" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -210,3 +210,12 @@ background: rgb(133,24,255);
 .navbar {
   padding: 20px 15px !important;
 }
+.notification {
+  display: none;
+  color: #FFFFFF;
+  background: #1a1e21;
+  position: absolute;
+  padding: 30px;
+  left: 50%;
+  bottom: 50%;
+}
