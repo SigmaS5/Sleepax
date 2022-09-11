@@ -175,9 +175,40 @@ html {
  }
 body {
   background: transparent !important;
+  padding: 15px;
 }
 .container {
   margin-top: 200px;
+}
+.logo img{
+  height: 22px;
+}
+.logo {
+  margin: auto;
+  transform: translateX(30px);
+}
+.btn-primary  {
+  width: auto;
+}
+.btn_cust {
+  height: 62px;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 25px rgb(120 0 255 / 50%);
+background: rgb(133,24,255);
+  background: radial-gradient(circle, rgba(133,24,255,1) 0%, rgba(120,0,255,1) 100%);
+  border-width: 0 !important;
+  transition: all 0.2s ease !important;
+}
+.btn_cust:active {
+    transform: scale(0.9);
+    background: #ff0071 !important;
+    text-shadow: 0 0 10px white;
+    box-shadow: 0 2px 35px rgb(255 0 113 / 81%);
+}
+.navbar {
+  padding: 20px 15px !important;
 }
 
 /*# sourceMappingURL=/main.c52e0fe2.css.map */
